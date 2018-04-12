@@ -1,0 +1,55 @@
+spring:
+  profiles:
+    active: dev
+server:
+  port: 8082
+  #address: localhost
+#mybatis配置
+mybatis:
+  config-locations: classpath:mybatis-config.xml
+  mapper-locations: classpath:com/talelife/myproject/mapper/*.xml
+  type-aliases-package: com.talelife.myproject.model
+#pagehelper分页插件配置
+pagehelper:
+  helperDialect: mysql
+  reasonable: true
+  supportMethodsArguments: true
+  params-count: countSql
+#日志配置
+logging:
+  level.org.springframework.web: debug
+  level.org.springframework.transaction: debug
+  level.org.mybatis: debug
+  level.com.talelife.myproject: debug
+  debug: false
+#redis session
+redis:
+  #hostName: 120.25.208.44
+  hostName: 172.31.118.23
+  password: 123456
+  port: 6379
+  timeout: 10000
+
+
+---
+spring:
+  profiles: dev
+  #spring数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/myproject?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.jdbc.Driver
+    #指定数据连接沲
+    type: com.alibaba.druid.pool.DruidDataSource
+---
+spring:
+  profiles: prd
+  #spring数据源配置
+  datasource:
+    url: jdbc:mysql://98.126.8.203:3306/zoy_trade?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    username: DB_zoy_trade
+    password: 261525
+    driver-class-name: com.mysql.jdbc.Driver
+    #指定数据连接沲
+    type: com.alibaba.druid.pool.DruidDataSource
