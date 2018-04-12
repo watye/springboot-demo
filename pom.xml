@@ -87,7 +87,25 @@
   </dependencies>
   <build>
     <finalName>springboot-demo</finalName>
-    <plugins>
+       <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*.properties</include>
+                <include>**/*.yml</include>
+                <include>**/*.xml</include>
+            </includes>
+            <filtering>false</filtering>
+        </resource>
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+            <filtering>false</filtering>
+        </resource>
+    </resources>
+       <plugins>
     	   <!-- 自动重动 该工程在spring boot开发过程中非常有用，当工程文件发生变化的时候工程能够自动重启生效变化的内容 -->
            <plugin>
                <groupId>org.springframework.boot</groupId>
