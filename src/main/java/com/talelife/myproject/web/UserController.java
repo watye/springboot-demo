@@ -1,8 +1,10 @@
 package com.talelife.myproject.web;
 
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,6 +41,12 @@ public class UserController extends BaseController{
         userService.add(user);
     }
 	
-	
+	@RequestMapping("/login")
+    public void login(HttpServletRequest request) {
+		Enumeration<String> names = request.getParameterNames();
+		while(names.hasMoreElements()){
+			System.out.println("============>"+names.nextElement());
+		}
+    }
 	
 }
