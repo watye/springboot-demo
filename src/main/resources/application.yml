@@ -2,7 +2,7 @@ spring:
   profiles:
     active: dev
 server:
-  port: 8082
+  port: 80
   #address: localhost
 #mybatis配置
 mybatis:
