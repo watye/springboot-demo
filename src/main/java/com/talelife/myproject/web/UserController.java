@@ -1,7 +1,10 @@
 package com.talelife.myproject.web;
 
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +49,13 @@ public class UserController extends BaseController{
 		Enumeration<String> names = request.getParameterNames();
 		while(names.hasMoreElements()){
 			System.out.println("============>"+names.nextElement());
+		}
+		
+		Map<String, String[]> maps = request.getParameterMap();
+		Iterator<Entry<String, String[]>> it = maps.entrySet().iterator();
+		while(it.hasNext()){
+			Entry<String, String[]> item =	it.next();
+			System.out.println("============>key"+item.getKey()+",value="+item.getValue());
 		}
     }
 	
