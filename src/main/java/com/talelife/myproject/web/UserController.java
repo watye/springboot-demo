@@ -1,5 +1,6 @@
 package com.talelife.myproject.web;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +56,7 @@ public class UserController extends BaseController{
 		Iterator<Entry<String, String[]>> it = maps.entrySet().iterator();
 		while(it.hasNext()){
 			Entry<String, String[]> item =	it.next();
-			System.out.println("============>key"+item.getKey()+",value="+item.getValue());
+			System.out.println("============>key"+item.getKey()+",value="+Arrays.toString(item.getValue()));
 		}
     }
 	
