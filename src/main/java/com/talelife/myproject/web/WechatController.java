@@ -1,13 +1,10 @@
 package com.talelife.myproject.web;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +16,8 @@ import com.alibaba.fastjson.JSON;
 import com.talelife.myproject.service.UserService;
 import com.talelife.util.BusinessException;
 
+import ch.qos.logback.classic.Level;
+
 @RestController
 @RequestMapping("/wechat")
 public class WechatController extends BaseController{
@@ -26,7 +25,8 @@ public class WechatController extends BaseController{
 	private static final String TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s";
 	private static final String USER_BASE_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s";
 	private static final String USER_DETAIL_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=%s&userid=%s";
-	private static String accessToken = "69B5KY45F6zaLnPrAbG0oT1agLFaDmFX183GBFmKoCa0FignC6EQdG5FuHBgUmLjfdoxFEHw07hOcGAOTZDNuwirAUJbxsi5GadGr5kI5aTvezlgcxHD7H1rcdRINL-LJ--Vc-r0yKBQLK9TfiIGppRh4TKALOyTC2g2oHYKfYH40TtSqSnE8vYlnfsZGV3V5VhadpEmWAWywTxtxbWjBg";	
+	private static String accessToken = null;	
+	private static final Object lock = new Object();
 	
 	@Resource
 	private UserService userService;
@@ -35,26 +35,49 @@ public class WechatController extends BaseController{
 	
 	@RequestMapping("/login")
     public void login(HttpServletRequest request) {
-		//1.get token
+		//1.access token
 		String code = request.getParameter("code");
-		/*UserInfo userToken = JSON.parseObject(get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk")), UserInfo.class);
-		System.out.println("user token->"+userToken.getAccessToken());*/
+		logger.info("access code->%s", code);
 		
 		UserInfo userToken = new UserInfo();
-		userToken.setAccessToken(accessToken);
+		
+		synchronized (lock) {
+			if(accessToken==null){
+				userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), UserInfo.class);
+				if(userToken.getErrcode()!=0){
+					logger.info("init access token false->%s",userToken.getErrmsg());
+				}else{
+					logger.info("init access token->%s",userToken.getAccessToken());
+				}
+			}
+		}
 		
 		//2.get base userinfo
-		UserInfo userBaseinfo = JSON.parseObject(get(String.format(USER_BASE_INFO_URL, userToken.getAccessToken(),code)),UserInfo.class);
+		UserInfo userBaseinfo = get(String.format(USER_BASE_INFO_URL, userToken.getAccessToken(),code),UserInfo.class);
+		logger.info("user baseinfo->%s",JSON.toJSONString(userBaseinfo));
+		if(userBaseinfo.getErrcode()==42001){
+			//token过期，重新获取token
+			userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), UserInfo.class);
+			if(userToken.getErrcode()!=0){
+				logger.info("init access token false->%s",userToken.getErrmsg());
+			}else{
+				logger.info("get access token->%s",userToken.getAccessToken());
+			}
+		}
 		
 		//3.get user detail
-		UserInfo userDetail = JSON.parseObject(get(String.format(USER_DETAIL_INFO_URL,userToken.getAccessToken(),userBaseinfo.getUserid())),UserInfo.class);
+		UserInfo userDetail = get(String.format(USER_DETAIL_INFO_URL,userToken.getAccessToken(),userBaseinfo.getUserid()),UserInfo.class);
+		if(userDetail.getErrcode()!=0){
+			logger.error("get userDetail false errorMsg->"+userDetail.getErrmsg());
+		}else{
+			logger.info("user detail->%s",JSON.toJSONString(userDetail));
+			logger.info("mobile->"+userDetail.getMobile());
+		}
 		
-		System.out.println(JSON.toJSONString(userDetail));
 		
-		System.out.println("=====mobile:"+userDetail.getMobile());
     }
 	
-	private static String get(String url){
+	private static <T> T get(String url,Class<T> clazz){
 		StringBuilder r = new StringBuilder();
 		try {
 			
@@ -72,7 +95,7 @@ public class WechatController extends BaseController{
 		} catch (Exception e) {
 			throw new BusinessException(e);
 		}
-		return r.toString();
+		return JSON.parseObject(r.toString(),clazz);
 	}
 	
 	private static class UserInfo{
