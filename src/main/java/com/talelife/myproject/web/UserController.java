@@ -56,8 +56,26 @@ public class UserController extends BaseController{
 		Iterator<Entry<String, String[]>> it = maps.entrySet().iterator();
 		while(it.hasNext()){
 			Entry<String, String[]> item =	it.next();
-			System.out.println("============>key"+item.getKey()+",value="+Arrays.toString(item.getValue()));
+			System.out.println("============>key="+item.getKey()+",value="+Arrays.toString(item.getValue()));
 		}
     }
+	
+	@RequestMapping("/suite_receive")
+    public String suiteReceive(HttpServletRequest request) {
+		Enumeration<String> names = request.getParameterNames();
+		while(names.hasMoreElements()){
+			System.out.println("============>"+names.nextElement());
+		}
+		
+		Map<String, String[]> maps = request.getParameterMap();
+		Iterator<Entry<String, String[]>> it = maps.entrySet().iterator();
+		while(it.hasNext()){
+			Entry<String, String[]> item =	it.next();
+			System.out.println("============>key="+item.getKey()+",value="+Arrays.toString(item.getValue()));
+		}
+		
+		return "success";
+    }
+	
 	
 }
