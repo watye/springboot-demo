@@ -61,6 +61,7 @@ public class WechatController extends BaseController{
 					userDetail.setErrmsg(userToken.getErrmsg());
 					return userDetail;
 				}else{
+					accessToken = userToken.getAccessToken();
 					logger.info("init access token->{}",userToken.getAccessToken());
 				}
 			}
