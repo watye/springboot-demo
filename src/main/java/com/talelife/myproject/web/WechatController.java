@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Objects;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -15,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.alibaba.fastjson.JSON;
 import com.talelife.myproject.service.UserService;
 import com.talelife.util.BusinessException;
-
-import ch.qos.logback.classic.Level;
 
 @RestController
 @RequestMapping("/wechat")
@@ -37,45 +36,69 @@ public class WechatController extends BaseController{
     public void login(HttpServletRequest request) {
 		//1.access token
 		String code = request.getParameter("code");
-		logger.info("access code->%s", code);
+		logger.info("access code->{}", code);
+		Objects.requireNonNull(code, "code为空");
 		
-		UserInfo userToken = new UserInfo();
+		WechatUserInfo userinfo = getWechatUserInfo(code);
+		if(userinfo.getErrcode()==0){
+			logger.info("access code->{}", userinfo.getMobile());
+		}else{
+			throw new BusinessException(userinfo.getErrmsg());
+		}
+		
+    }
+
+	private WechatUserInfo getWechatUserInfo(String code) {
+		
+		WechatUserInfo userDetail = new WechatUserInfo();
+		WechatUserInfo userToken = new WechatUserInfo();
 		
 		synchronized (lock) {
 			if(accessToken==null){
-				userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), UserInfo.class);
+				userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), WechatUserInfo.class);
 				if(userToken.getErrcode()!=0){
-					logger.info("init access token false->%s",userToken.getErrmsg());
+					logger.info("init access token false->{}",userToken.getErrmsg());
+					userDetail.setErrmsg(userToken.getErrmsg());
+					return userDetail;
 				}else{
-					logger.info("init access token->%s",userToken.getAccessToken());
+					logger.info("init access token->{}",userToken.getAccessToken());
 				}
 			}
 		}
 		
 		//2.get base userinfo
-		UserInfo userBaseinfo = get(String.format(USER_BASE_INFO_URL, userToken.getAccessToken(),code),UserInfo.class);
-		logger.info("user baseinfo->%s",JSON.toJSONString(userBaseinfo));
+		WechatUserInfo userBaseinfo = get(String.format(USER_BASE_INFO_URL, userToken.getAccessToken(),code),WechatUserInfo.class);
+		logger.info("user baseinfo->{}",JSON.toJSONString(userBaseinfo));
 		if(userBaseinfo.getErrcode()==42001){
 			//token过期，重新获取token
-			userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), UserInfo.class);
+			userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), WechatUserInfo.class);
 			if(userToken.getErrcode()!=0){
-				logger.info("init access token false->%s",userToken.getErrmsg());
+				logger.info("init access token false->{}",userToken.getErrmsg());
+				userDetail.setErrmsg(userToken.getErrmsg());
+				return userDetail;
 			}else{
-				logger.info("get access token->%s",userToken.getAccessToken());
+				logger.info("get access token->{}",userToken.getAccessToken());
+				userBaseinfo = get(String.format(USER_BASE_INFO_URL, userToken.getAccessToken(),code),WechatUserInfo.class);
 			}
 		}
 		
+		if(userBaseinfo.getErrcode()!=0){
+			logger.error("get user baseinfo false errmsg",userBaseinfo.getErrmsg());
+		}
+		
 		//3.get user detail
-		UserInfo userDetail = get(String.format(USER_DETAIL_INFO_URL,userToken.getAccessToken(),userBaseinfo.getUserid()),UserInfo.class);
+		userDetail = get(String.format(USER_DETAIL_INFO_URL,userToken.getAccessToken(),userBaseinfo.getUserid()),WechatUserInfo.class);
 		if(userDetail.getErrcode()!=0){
-			logger.error("get userDetail false errorMsg->"+userDetail.getErrmsg());
+			logger.error("get userDetail false errorMsg->{}",userDetail.getErrmsg());
+			userDetail.setErrmsg(userToken.getErrmsg());
+			return userDetail;
 		}else{
-			logger.info("user detail->%s",JSON.toJSONString(userDetail));
+			logger.info("user detail->{}",JSON.toJSONString(userDetail));
 			logger.info("mobile->"+userDetail.getMobile());
 		}
 		
-		
-    }
+		return userDetail;
+	}
 	
 	private static <T> T get(String url,Class<T> clazz){
 		StringBuilder r = new StringBuilder();
@@ -98,9 +121,9 @@ public class WechatController extends BaseController{
 		return JSON.parseObject(r.toString(),clazz);
 	}
 	
-	private static class UserInfo{
+	private static class WechatUserInfo{
 		private String accessToken;
-		private int errcode;
+		private int errcode = -1;
 		private String errmsg;
 		private String userid;
 		private String name;
