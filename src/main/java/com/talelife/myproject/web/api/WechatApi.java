@@ -45,7 +45,9 @@ public class WechatApi extends BaseController{
 		if(userinfo.getErrcode()==0){
 			//3.业务系统认证
 			User user = getUser(userinfo.getMobile());
-			response.sendRedirect("http://116.62.246.148:8082/index/index.html?type=1&loginNo=haojiawei");
+			String jumpUrl = "http://116.62.246.148:8082/index/index.html?type=1&loginNo=haojiawei";
+			logger.info("jumpUrl->{}", jumpUrl);
+			response.sendRedirect(jumpUrl);
 			return;
 		}else{
 			throw new BusinessException(userinfo.getErrmsg());
@@ -61,7 +63,7 @@ public class WechatApi extends BaseController{
 
 	private static WechatUserResult getWechatUserInfo(String code) {
 		
-		logger.info("expiresTime->{}",JSON.toJSONString(expiresTime));
+		logger.info("expiresTime->{}",expiresTime);
 		
 		//1、获取token：1)初次，2)token过期
 		synchronized (lock) {
@@ -116,7 +118,7 @@ public class WechatApi extends BaseController{
 		}else{
 			accessToken = newToken.getAccessToken();
 			if(Objects.nonNull(newToken.getExpiresIn()) && newToken.getExpiresIn()>0){
-				expiresTime = System.currentTimeMillis() + newToken.getExpiresIn().longValue() - 900;
+				expiresTime = System.currentTimeMillis() + newToken.getExpiresIn().longValue()*1000 - 900*1000;
 			}
 			logger.info("token expiresTime->{}",expiresTime);
 			logger.info("wechatApi get access token->{}",JSON.toJSONString(newToken));
