@@ -1,4 +1,4 @@
-package com.talelife.myproject.web;
+package com.talelife.myproject.web.api;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,21 +17,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
 import com.talelife.myproject.service.UserService;
+import com.talelife.myproject.web.BaseController;
 import com.talelife.util.BusinessException;
 
 @RestController
 @RequestMapping("/wechat")
-public class WechatController extends BaseController{
+public class WechatApi extends BaseController{
 	
 	private static final String TOKEN_URL = "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s";
 	private static final String USER_BASE_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/getuserinfo?access_token=%s&code=%s";
 	private static final String USER_DETAIL_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=%s&userid=%s";
 	private static String accessToken = null;	
 	private static final Object lock = new Object();
-	
-	@Resource
-	private UserService userService;
-	
 	
 	
 	@RequestMapping("/login")
@@ -41,17 +38,29 @@ public class WechatController extends BaseController{
 		logger.info("access code->{}", code);
 		Objects.requireNonNull(code, "code不能为空");
 		
+		//2.取微信用户信息
 		WechatUserInfo userinfo = getWechatUserInfo(code);
 		if(userinfo.getErrcode()==0){
 			logger.info("access mobile->{}", userinfo.getMobile());
-			//授权认证成功，登录系统
-			response.sendRedirect("http://116.62.246.148:8082/index/index.html?loginNo=s_1351749539628934");
-			return;
+			//3.业务系统认证
+			if(checkUser(userinfo.getMobile())){
+				//登录系统
+				response.sendRedirect("http://116.62.246.148:8082/index/index.html?loginNo=s_1351749539628934");
+				return;
+			}else{
+				throw new BusinessException(String.format("找不到手机号为%s的用户",userinfo.getMobile()));
+			}
 		}else{
 			throw new BusinessException(userinfo.getErrmsg());
 		}
 		
     }
+
+	private boolean checkUser(String mobile) {
+		Objects.requireNonNull(mobile, "微信绑定的手机号码不能为空");
+		//TODO
+		return true;
+	}
 
 	private WechatUserInfo getWechatUserInfo(String code) {
 		
