@@ -1,6 +1,7 @@
 package com.talelife.myproject.web;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -9,6 +10,7 @@ import java.util.Objects;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,15 +35,18 @@ public class WechatController extends BaseController{
 	
 	
 	@RequestMapping("/login")
-    public void login(HttpServletRequest request) {
+    public void login(HttpServletRequest request,HttpServletResponse response) throws IOException {
 		//1.access token
 		String code = request.getParameter("code");
 		logger.info("access code->{}", code);
-		Objects.requireNonNull(code, "code为空");
+		Objects.requireNonNull(code, "code不能为空");
 		
 		WechatUserInfo userinfo = getWechatUserInfo(code);
 		if(userinfo.getErrcode()==0){
-			logger.info("access code->{}", userinfo.getMobile());
+			logger.info("access mobile->{}", userinfo.getMobile());
+			//授权认证成功，登录系统
+			response.sendRedirect("http://116.62.246.148:8082/index/index.html?loginNo=s_1351749539628934");
+			return;
 		}else{
 			throw new BusinessException(userinfo.getErrmsg());
 		}
