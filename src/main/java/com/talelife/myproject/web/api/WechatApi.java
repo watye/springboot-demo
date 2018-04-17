@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
+import com.talelife.myproject.model.User;
 import com.talelife.myproject.service.UserService;
 import com.talelife.myproject.web.BaseController;
 import com.talelife.util.BusinessException;
@@ -29,92 +30,95 @@ public class WechatApi extends BaseController{
 	private static final String USER_DETAIL_INFO_URL = "https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=%s&userid=%s";
 	private static String accessToken = null;	
 	private static final Object lock = new Object();
+	private static long expiresTime = -1L;
 	
 	
 	@RequestMapping("/login")
     public void login(HttpServletRequest request,HttpServletResponse response) throws IOException {
-		//1.access token
+		//1.获取code
 		String code = request.getParameter("code");
 		logger.info("access code->{}", code);
 		Objects.requireNonNull(code, "code不能为空");
 		
 		//2.取微信用户信息
-		WechatUserInfo userinfo = getWechatUserInfo(code);
+		WechatUserResult userinfo = getWechatUserInfo(code);
 		if(userinfo.getErrcode()==0){
-			logger.info("access mobile->{}", userinfo.getMobile());
 			//3.业务系统认证
-			if(checkUser(userinfo.getMobile())){
-				//登录系统
-				response.sendRedirect("http://116.62.246.148:8082/index/index.html?loginNo=s_1351749539628934");
-				return;
-			}else{
-				throw new BusinessException(String.format("找不到手机号为%s的用户",userinfo.getMobile()));
-			}
+			User user = getUser(userinfo.getMobile());
+			response.sendRedirect("http://116.62.246.148:8082/index/index.html?type=1&loginNo=haojiawei");
+			return;
 		}else{
 			throw new BusinessException(userinfo.getErrmsg());
 		}
 		
     }
 
-	private boolean checkUser(String mobile) {
-		Objects.requireNonNull(mobile, "微信绑定的手机号码不能为空");
-		//TODO
-		return true;
+	private User getUser(String mobile) {
+		Objects.requireNonNull(mobile, "企业微信绑定的手机号码不能为空");
+		User user = new User();
+		return user;
 	}
 
-	private WechatUserInfo getWechatUserInfo(String code) {
+	private static WechatUserResult getWechatUserInfo(String code) {
 		
-		WechatUserInfo userDetail = new WechatUserInfo();
-		
+		//1、获取token：1)初次，2)token过期
 		synchronized (lock) {
-			if(accessToken==null){
-				WechatUserInfo userToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), WechatUserInfo.class);
-				if(userToken.getErrcode()!=0){
-					logger.info("init access token false->{}",userToken.getErrmsg());
-					userDetail.setErrmsg(userToken.getErrmsg());
-					return userDetail;
-				}else{
-					accessToken = userToken.getAccessToken();
-					logger.info("init access token->{}",userToken.getAccessToken());
-				}
+			if(accessToken==null || expiresTime<System.currentTimeMillis()){
+				getToken();
 			}
 		}
 		
 		//2.get base userinfo
-		WechatUserInfo userBaseinfo = get(String.format(USER_BASE_INFO_URL, accessToken,code),WechatUserInfo.class);
-		logger.info("user baseinfo->{}",JSON.toJSONString(userBaseinfo));
+		WechatUserResult userBaseinfo = getUserBaseinfo(code);
+		
+		//3.get user detail
+		Objects.requireNonNull(userBaseinfo.getUserid(), "企业微信获取的用户id为空");
+		
+		return getUserDetail(userBaseinfo);
+	}
+
+	private static WechatUserResult getUserDetail(WechatUserResult userBaseinfo) {
+		WechatUserResult userDetail = get(String.format(USER_DETAIL_INFO_URL,accessToken,userBaseinfo.getUserid()),WechatUserResult.class);
+		if(userDetail.getErrcode()!=0){
+			logger.error("wechatApi get userDetail false errorMsg->{}",userDetail.getErrmsg());
+		}else{
+			logger.info("wechatApi user detail->{}",JSON.toJSONString(userDetail));
+			logger.info("wechatApi mobile->{}",userDetail.getMobile());
+		}
+		return userDetail;
+	}
+
+	private static WechatUserResult getUserBaseinfo(String code) {
+		Objects.requireNonNull(code, "企业微信获取到的code为空");
+		WechatUserResult userBaseinfo = get(String.format(USER_BASE_INFO_URL, accessToken,code),WechatUserResult.class);
+		logger.info("wechatApi user baseinfo->{}",JSON.toJSONString(userBaseinfo));
 		if(userBaseinfo.getErrcode()==42001){
 			//token过期，重新获取token
 			synchronized (lock) {
-				WechatUserInfo newToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), WechatUserInfo.class);
-				if(newToken.getErrcode()!=0){
-					logger.info("init access token false->{}",newToken.getErrmsg());
-					userDetail.setErrmsg(newToken.getErrmsg());
-					return userDetail;
-				}else{
-					logger.info("get access token->{}",newToken.getAccessToken());
-					accessToken = newToken.getAccessToken();
-					userBaseinfo = get(String.format(USER_BASE_INFO_URL, newToken.getAccessToken(),code),WechatUserInfo.class);
-				}
+				getToken();
+				userBaseinfo = get(String.format(USER_BASE_INFO_URL, accessToken,code),WechatUserResult.class);
 			}
 		}
 		
 		if(userBaseinfo.getErrcode()!=0){
-			logger.error("get user baseinfo false errmsg",userBaseinfo.getErrmsg());
+			logger.error("wechatApi get user baseinfo false errmsg->{}",userBaseinfo.getErrmsg());
 		}
-		
-		//3.get user detail
-		userDetail = get(String.format(USER_DETAIL_INFO_URL,accessToken,userBaseinfo.getUserid()),WechatUserInfo.class);
-		if(userDetail.getErrcode()!=0){
-			logger.error("get userDetail false errorMsg->{}",userDetail.getErrmsg());
-			userDetail.setErrmsg(userDetail.getErrmsg());
-			return userDetail;
+		return userBaseinfo;
+	}
+	
+	private static WechatUserResult getToken(){
+		WechatUserResult newToken = get(String.format(TOKEN_URL, "ww894f16a05bf6e59b","eoZcHvtAINp7riMGYKKK366kklG-gLbVDkiQDOEWzTk"), WechatUserResult.class);
+		if(newToken.getErrcode()!=0){
+			logger.info("wechatApi get access token false->{}",newToken.getErrmsg());
+			throw new BusinessException(String.format("获取企业微信token失败：%s",newToken.getErrmsg()));
 		}else{
-			logger.info("user detail->{}",JSON.toJSONString(userDetail));
-			logger.info("mobile->"+userDetail.getMobile());
+			accessToken = newToken.getAccessToken();
+			if(Objects.nonNull(newToken.getExpiresIn()) && newToken.getExpiresIn()>0){
+				expiresTime = newToken.getExpiresIn()+System.currentTimeMillis()-15*60;
+			}
+			logger.info("wechatApi get access token->{}",newToken.getAccessToken());
 		}
-		
-		return userDetail;
+		return newToken;
 	}
 	
 	private static <T> T get(String url,Class<T> clazz){
@@ -138,7 +142,7 @@ public class WechatApi extends BaseController{
 		return JSON.parseObject(r.toString(),clazz);
 	}
 	
-	private static class WechatUserInfo{
+	private static class WechatUserResult{
 		private String accessToken;
 		private int errcode = -1;
 		private String errmsg;
@@ -147,6 +151,7 @@ public class WechatApi extends BaseController{
 		private String mobile;
 		private String email;
 		private String avatar;
+		private Long expiresIn;
 		public int getErrcode() {
 			return errcode;
 		}
@@ -194,6 +199,12 @@ public class WechatApi extends BaseController{
 		}
 		public void setAccessToken(String accessToken) {
 			this.accessToken = accessToken;
+		}
+		public Long getExpiresIn() {
+			return expiresIn;
+		}
+		public void setExpiresIn(Long expiresIn) {
+			this.expiresIn = expiresIn;
 		}
 		
 	}
