@@ -61,9 +61,11 @@ public class WechatApi extends BaseController{
 
 	private static WechatUserResult getWechatUserInfo(String code) {
 		
+		logger.info("expiresTime->{}",JSON.toJSONString(expiresTime));
+		
 		//1、获取token：1)初次，2)token过期
 		synchronized (lock) {
-			if(accessToken==null || (expiresTime != -1 && expiresTime<System.currentTimeMillis())){
+			if(accessToken==null || (expiresTime != -1L && expiresTime<System.currentTimeMillis())){
 				getToken();
 			}
 		}
@@ -114,8 +116,9 @@ public class WechatApi extends BaseController{
 		}else{
 			accessToken = newToken.getAccessToken();
 			if(Objects.nonNull(newToken.getExpiresIn()) && newToken.getExpiresIn()>0){
-				expiresTime = newToken.getExpiresIn()+System.currentTimeMillis()-15*60;
+				expiresTime = System.currentTimeMillis() + newToken.getExpiresIn().longValue() - 900;
 			}
+			logger.info("token expiresTime->{}",expiresTime);
 			logger.info("wechatApi get access token->{}",JSON.toJSONString(newToken));
 		}
 		return newToken;
