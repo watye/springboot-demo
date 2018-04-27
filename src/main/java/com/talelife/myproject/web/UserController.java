@@ -13,10 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.talelife.myproject.mapper.UserMapper;
 import com.talelife.myproject.model.User;
 import com.talelife.myproject.service.UserService;
 import com.talelife.myproject.service.UserService.UserQuery;
 import com.talelife.util.Page;
+import com.talelife.util.SpringContextHolder;
 
 @RestController
 @RequestMapping("/user")
@@ -45,18 +47,17 @@ public class UserController extends BaseController{
         userService.add(user);
     }
 	
+	@RequestMapping("/delete")
+    public void delete(long id) {
+        userService.delete(id);
+    }
+	
 	@RequestMapping("/login")
     public void login(HttpServletRequest request) {
-		Enumeration<String> names = request.getParameterNames();
-		while(names.hasMoreElements()){
-			System.out.println("============>"+names.nextElement());
-		}
-		
-		Map<String, String[]> maps = request.getParameterMap();
-		Iterator<Entry<String, String[]>> it = maps.entrySet().iterator();
-		while(it.hasNext()){
-			Entry<String, String[]> item =	it.next();
-			System.out.println("============>key="+item.getKey()+",value="+Arrays.toString(item.getValue()));
+		UserService mappe = SpringContextHolder.getBean("userServiceImpl");
+		String[] a = SpringContextHolder.getApplicationContext().getBeanDefinitionNames();
+		for (String a1 : a) {
+			System.out.println("bean==>"+a1);
 		}
     }
 	

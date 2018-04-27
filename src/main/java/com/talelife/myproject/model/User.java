@@ -9,6 +9,11 @@ import java.util.Date;
  * @version 1.0
  */
 public class User implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8581953310313209902L;
+
 	//
 	private Long id;
 	

@@ -9,3 +9,4 @@ v1.4 配置文件添加多环境配置，指定环境运行：java -jar springbo
 v1.5 添加日志输出到文件,pom.xml添加运行命令配置
 v1.6 添加测试用例配置
 v1.7 springboot整合redis
+v1.8 mybatis整合redis缓存
