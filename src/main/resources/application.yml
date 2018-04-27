@@ -1,8 +1,12 @@
 spring:
   profiles:
     active: dev
+  redis:
+    host: 172.31.118.23
+    password: 123456
+    port: 6379
 server:
-  port: 8082
+  port: 8085
   #address: localhost
 #mybatis配置
 mybatis:
@@ -17,6 +21,7 @@ pagehelper:
   params-count: countSql
 #日志配置
 logging:
+  file: springboot-demo.log
   level.org.springframework.web: debug
   level.org.springframework.transaction: debug
   level.org.mybatis: debug
@@ -25,7 +30,7 @@ logging:
 #redis session
 redis:
   #hostName: 120.25.208.44
-  hostName: 172.31.118.23
+  host: 172.31.118.23
   password: 123456
   port: 6379
   timeout: 10000
