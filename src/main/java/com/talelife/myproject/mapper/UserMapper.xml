@@ -7,16 +7,16 @@
   @version 1.0
 -->
 <mapper namespace="com.talelife.myproject.mapper.UserMapper">
-	<cache type="com.talelife.cache.MybatisRedisCache">
-		<!-- 收回策略,LRU最近最少使用的,FIFO先进先出,SOFT软引用,WEAK弱引用  -->
+	<!-- <cache type="com.talelife.cache.MybatisRedisCache">
+		收回策略,LRU最近最少使用的,FIFO先进先出,SOFT软引用,WEAK弱引用 
 		<property name="eviction" value="LRU" />
-		<!-- 刷新间隔毫秒 -->
-        <property name="flushInterval" value="600000" />
-        <!-- 引用数目 -->
+		刷新间隔毫秒
+        <property name="flushInterval" value="500" />
+        引用数目
         <property name="size" value="1024" />
-        <!-- 可读写的缓存会返回缓存对象的拷贝（通过序列化）。这会慢一些，但是安全，因此默认是false -->
+        可读写的缓存会返回缓存对象的拷贝（通过序列化）。这会慢一些，但是安全，因此默认是false
         <property name="readOnly" value="false" />
-    </cache>
+    </cache> -->
     
 	<!-- 用户对象映射 -->
 	<resultMap id="userMap" type="com.talelife.myproject.model.User">

@@ -1,4 +1,4 @@
-package com.talelife.myproject.web;
+package com.talelife.myproject.controller;
 
 import java.util.Arrays;
 import java.util.Enumeration;

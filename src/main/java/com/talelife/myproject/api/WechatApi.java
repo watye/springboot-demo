@@ -1,4 +1,4 @@
-package com.talelife.myproject.web.api;
+package com.talelife.myproject.api;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.alibaba.fastjson.JSON;
+import com.talelife.myproject.controller.BaseController;
 import com.talelife.myproject.model.User;
 import com.talelife.myproject.service.UserService;
-import com.talelife.myproject.web.BaseController;
 import com.talelife.util.BusinessException;
 
 @RestController

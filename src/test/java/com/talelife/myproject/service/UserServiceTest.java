@@ -4,6 +4,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import com.talelife.util.SpringContextHolder;
 /**
  * 用户业务测试类
  * date: 2017-08-17 17:54:46
@@ -20,7 +22,7 @@ public class UserServiceTest{
 	
 	@Test
 	public void testFindAll(){
-		System.out.println(userService.findAll());
+		userService.findAll();
 	}
 	
 }

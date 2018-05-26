@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 
+  用户角色关系映射文件
+  date: 2018-04-27 15:44:49
+  @author Liuweiyao
+  @version 1.0
+-->
+<mapper namespace="com.talelife.myproject.mapper.UserRoleMapper">
+	<!-- <cache type="com.talelife.cache.MybatisRedisCache">
+		收回策略,LRU最近最少使用的,FIFO先进先出,SOFT软引用,WEAK弱引用 
+		<property name="eviction" value="LRU" />
+		刷新间隔毫秒
+        <property name="flushInterval" value="600000" />
+        引用数目
+        <property name="size" value="1024" />
+        可读写的缓存会返回缓存对象的拷贝（通过序列化）。这会慢一些，但是安全，因此默认是false
+        <property name="readOnly" value="false" />
+    </cache> -->
+	<!-- 用户角色关系对象映射 -->
+	<resultMap id="userRoleMap" type="com.talelife.myproject.model.UserRole">
+			<!--  -->
+				<id property="id" column="id" javaType="Long" />
+					<!--  -->
+				<result property="roleId" column="role_id" javaType="Long" />
+					<!--  -->
+				<result property="userId" column="user_id" javaType="Long" />
+				</resultMap>
+	
+	<sql id="columns">
+		  `id`
+	  	  ,`role_id`
+	  	  ,`user_id`
+	  </sql>
+	
+	<!-- 新增用户角色关系 -->
+	<insert id="add" parameterType="com.talelife.myproject.model.UserRole" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `t_user_role` (
+				`role_id`
+				,`user_id`
+		)
+		VALUES (
+				#{roleId}
+				,#{userId}
+		)
+	</insert>
+	
+	<!-- 删除用户角色关系 -->
+	<delete id="delete">
+		DELETE FROM `t_user_role` WHERE `id`=#{id}		
+	</delete>
+	
+	<!-- 修改用户角色关系 -->
+	<update id="update" parameterType="com.talelife.myproject.model.UserRole">
+		UPDATE `t_user_role`
+		<set>
+			<if test="roleId != null">`role_id`=#{roleId},</if>
+			<if test="userId != null">`user_id`=#{userId},</if>
+		</set>
+		WHERE `id`=#{id}	
+	</update>
+	
+	<!-- 根据主键查询用户角色关系 -->
+	<select id="findByPK" resultMap="userRoleMap">
+	SELECT
+	  <include refid="columns"/>
+	FROM `t_user_role`
+	  WHERE `id`=#{id}	
+	</select>
+	
+	<!-- 用户角色关系列表查询 -->
+	<select id="findList" resultMap="userRoleMap">
+    SELECT
+	  <include refid="columns"/>
+  FROM `t_user_role`
+	<where>
+			<if test="roleId != null">AND `role_id`=#{roleId}</if>
+			<if test="userId != null">AND `user_id`=#{userId}</if>
+		</where>
+	</select>
+	
+	<!-- 用户角色关系查询全部 -->
+	<select id="findAll" resultMap="userRoleMap">
+    SELECT
+	  <include refid="columns"/>
+  FROM `t_user_role`
+	</select>
+</mapper>
