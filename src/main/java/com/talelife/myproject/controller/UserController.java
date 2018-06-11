@@ -1,24 +1,19 @@
 package com.talelife.myproject.controller;
 
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.talelife.myproject.mapper.UserMapper;
 import com.talelife.myproject.model.User;
 import com.talelife.myproject.service.UserService;
 import com.talelife.myproject.service.UserService.UserQuery;
 import com.talelife.util.Page;
-import com.talelife.util.SpringContextHolder;
+
+import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/user")
@@ -31,7 +26,8 @@ public class UserController extends BaseController{
         return userService.findAll();
     }
 	
-	@RequestMapping("/page")
+	@ApiOperation(value="获取用户列表", notes="")
+	@RequestMapping(value="/page",method=RequestMethod.GET)
     public Page<User> page() {
 		UserQuery query = new UserQuery();
 		query.setPageNum(2);
