@@ -4,35 +4,42 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * mybatis分页辅助类
+ * date 2018-06-08
+ * 
+ * @author lwy
+ * @param <E>
+ */
 public final class Page<E> implements Serializable{
 	private static final long serialVersionUID = -2775453835720800655L;
 	/**
 	 * 默认每页记录数
 	 */
-	public static final int DEFAULT_PAGE_SIZE = 5;
+	public static final int DEFAULT_PAGE_SIZE = 10;
 	private int pageNum;
     /**
-     * 椤甸潰澶у皬
+     * 每页数量
      */
     private int pageSize;
     /**
-     * 璧峰琛�
+     * 开始行
      */
     private int startRow;
     /**
-     * 鏈
+     * 结束行
      */
     private int endRow;
     /**
-     * 鎬绘暟
+     * 总记录数
      */
     private long total;
     /**
-     * 鎬婚〉鏁�
+     * 总页数
      */
     private int pages;
     
-    private transient List<E> data = new ArrayList<E>();
+    private transient List<E> data = new ArrayList<>();
 
     
 	public Page() {

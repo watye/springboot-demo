@@ -10,3 +10,4 @@ v1.5 添加日志输出到文件,pom.xml添加运行命令配置
 v1.6 添加测试用例配置
 v1.7 springboot整合redis（配置用的是默认的参数名spring.redis）
 v1.8 mybatis整合redis缓存（目前是全量刷缓存）
+v2.0 springboot升级到2.02版本

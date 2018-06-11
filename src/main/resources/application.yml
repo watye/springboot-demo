@@ -10,11 +10,11 @@ server:
   #address: localhost
 #mybatis配置
 mybatis:
-  config-locations: classpath:mybatis-config11.xml
+  config-locations: classpath:mybatis-config.xml
   mapper-locations: classpath:com/talelife/myproject/mapper/*.xml
-  type-aliases-package: com.talelife.myproject.model11
+  type-aliases-package: com.talelife.myproject.model
   configuration:
-    cache-enabled: false
+    cache-enabled: true
 #pagehelper分页插件配置
 pagehelper:
   helperDialect: mysql

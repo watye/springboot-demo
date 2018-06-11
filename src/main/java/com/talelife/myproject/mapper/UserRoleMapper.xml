@@ -17,6 +17,7 @@
         可读写的缓存会返回缓存对象的拷贝（通过序列化）。这会慢一些，但是安全，因此默认是false
         <property name="readOnly" value="false" />
     </cache> -->
+    <cache type="com.talelife.cache.MybatisRedisCache"></cache>
 	<!-- 用户角色关系对象映射 -->
 	<resultMap id="userRoleMap" type="com.talelife.myproject.model.UserRole">
 			<!--  -->

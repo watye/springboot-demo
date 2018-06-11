@@ -52,14 +52,6 @@ public class UserController extends BaseController{
         userService.delete(id);
     }
 	
-	@RequestMapping("/login")
-    public void login(HttpServletRequest request) {
-		UserService mappe = SpringContextHolder.getBean("userServiceImpl");
-		String[] a = SpringContextHolder.getApplicationContext().getBeanDefinitionNames();
-		for (String a1 : a) {
-			System.out.println("bean==>"+a1);
-		}
-    }
 	
 	
 	

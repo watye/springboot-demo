@@ -1,128 +1,112 @@
 package com.talelife.cache;
 
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.ibatis.cache.Cache;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
-import redis.clients.jedis.exceptions.JedisConnectionException;
+import com.talelife.util.SpringContextHolder;
 
 public class MybatisRedisCache implements Cache {
 
-	private static JedisConnectionFactory jedisConnectionFactory;
+	private static final Logger logger = LoggerFactory.getLogger(MybatisRedisCache.class);
+	private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+	private final String cacheInstanceId;
+	private RedisTemplate<Object, Object> redisTemplate;
+	/**
+	 * redis过期时间
+	 */
+	private static final long EXPIRE_TIME_IN_MINUTES = 30;
 
-    private final String id;
+	public MybatisRedisCache(String id) {
+		if (Objects.isNull(id)) {
+			throw new IllegalArgumentException("Cache instances require an ID");
+		}
+		this.cacheInstanceId = id;
+	}
 
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+	@Override
+	public String getId() {
+		return cacheInstanceId;
+	}
 
-    public MybatisRedisCache(final String id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Cache instances require an ID");
-        }
-        this.id = id;
-    }
+	/**
+	 * 缓存结果集到redis
+	 *
+	 * @param key
+	 * @param value
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public void putObject(Object key, Object value) {
+		ValueOperations<Object, Object> opsForValue = getRedisTemplate().opsForValue();
+		opsForValue.set(key, value, EXPIRE_TIME_IN_MINUTES, TimeUnit.MINUTES);
+		logger.debug("Put query result to redis");
+	}
 
-    @Override
-    public void clear() {
-        RedisConnection connection = null;
-        try {
-            connection = jedisConnectionFactory.getConnection();
-            connection.flushDb();
-            connection.flushAll();
-        } catch (JedisConnectionException e) {
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-        }
-    }
+	/**
+	 * 从redis取缓存结果集
+	 *
+	 * @param key
+	 * @return
+	 */
+	@Override
+	public Object getObject(Object key) {
+		RedisTemplate<Object, Object> redisTemplate = getRedisTemplate();
+		ValueOperations<Object, Object> opsForValue = redisTemplate.opsForValue();
+		logger.debug("Get cached query result from redis");
+		return opsForValue.get(key);
+	}
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+	/**
+	 * 清除redis指定key的缓存
+	 *
+	 * @param key
+	 * @return
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	public Object removeObject(Object key) {
+		RedisTemplate<Object, Object> redisTemplate = getRedisTemplate();
+		redisTemplate.delete(key);
+		logger.debug("Remove cached query result from redis");
+		return null;
+	}
 
-    @Override
-    public Object getObject(Object key) {
-        Object result = null;
-        RedisConnection connection = null;
-        try {
-            connection = jedisConnectionFactory.getConnection();
-            RedisSerializer<Object> serializer = new JdkSerializationRedisSerializer();
-            result = serializer.deserialize(connection.get(serializer.serialize(key)));
-        } catch (JedisConnectionException e) {
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-        }
-        return result;
-    }
+	/**
+	 * 清除缓存实例
+	 */
+	@Override
+	public void clear() {
+		RedisTemplate<Object, Object> redisTemplate = getRedisTemplate();
+		redisTemplate.execute((RedisCallback) connection -> {
+			connection.flushDb();
+			return null;
+		});
+		logger.debug("Clear all the cached query result from redis");
+	}
 
-    @Override
-    public ReadWriteLock getReadWriteLock() {
-        return this.readWriteLock;
-    }
+	@Override
+	public int getSize() {
+		return 0;
+	}
 
-    @Override
-    public int getSize() {
-        int result = 0;
-        RedisConnection connection = null;
-        try {
-            connection = jedisConnectionFactory.getConnection();
-            result = Integer.valueOf(connection.dbSize().toString());
-        } catch (JedisConnectionException e) {
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-        }
-        return result;
-    }
+	@Override
+	public ReadWriteLock getReadWriteLock() {
+		return readWriteLock;
+	}
 
-    @Override
-    public void putObject(Object key, Object value) {
-        RedisConnection connection = null;
-        try {
-            connection = jedisConnectionFactory.getConnection();
-            RedisSerializer<Object> serializer = new JdkSerializationRedisSerializer();
-            connection.set(serializer.serialize(key), serializer.serialize(value));
-        } catch (JedisConnectionException e) {
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-        }
-    }
-
-    @Override
-    public Object removeObject(Object key) {
-        RedisConnection connection = null;
-        Object result = null;
-        try {
-            connection = jedisConnectionFactory.getConnection();
-            RedisSerializer<Object> serializer = new JdkSerializationRedisSerializer();
-            result = connection.expire(serializer.serialize(key), 0);
-        } catch (JedisConnectionException e) {
-            e.printStackTrace();
-        } finally {
-            if (connection != null) {
-                connection.close();
-            }
-        }
-        return result;
-    }
-
-    public static void setJedisConnectionFactory(JedisConnectionFactory jedisConnectionFactory) {
-        MybatisRedisCache.jedisConnectionFactory = jedisConnectionFactory;
-    }
-
+	private RedisTemplate getRedisTemplate() {
+		if (redisTemplate == null) {
+			redisTemplate = SpringContextHolder.getBean("redisTemplate");
+		}
+		return redisTemplate;
+	}
 }
